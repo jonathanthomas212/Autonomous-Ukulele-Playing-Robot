@@ -1,0 +1,371 @@
+#include "EV3_FileIO.c"
+void musicRead(float* redTest, float* greenTest, float* blueTest);
+void readVerse(float* redTest, float* greenTest, float* blueTest, const int TOL);
+void readChorus(float* redTest, float* greenTest, float* blueTest, const int TOL);
+void readBridge(float* redTest, float* greenTest, float* blueTest, const int TOL);
+
+void musicRead(float* redTest, float* greenTest, float* blueTest)
+{
+	motor[motorA] = 0;
+	//float redTest[5], greenTest[5], blueTest[5];
+	long redVal = 0, greenVal = 0, blueVal = 0;
+	// loop to get test colors
+	for(int count = 1; count < 6; count++)
+	{
+		nMotorEncoder[motorA] = 0;
+		motor[motorA] = 50;
+		//change value as necessary
+		while(nMotorEncoder[motorA] < 92)
+		{}
+		motor[motorA]=0;
+		// get color values
+		getColorRawRGB(S2,redVal, greenVal, blueVal);
+		// assign into test array
+		redTest[count] = redVal;
+		greenTest[count] = greenVal;
+		blueTest[count] = blueVal;
+		//take out after done testing
+		while(SensorValue[S3]==0)
+		{}
+		while(SensorValue[S3]==1)
+		{}
+	}
+	motor[motorA] = 50;
+	wait1Msec(1000);
+	motor[motorA]=0;
+	while(SensorValue[S3]==0)
+	{}
+	while(SensorValue[S3]==1)
+	{}
+}
+
+void readVerse(float* redTest, float* greenTest, float* blueTest, const int TOL)
+{
+	// open file-robot.txt
+	TFileHandle fout;
+	bool fileOkay = openWritePC(fout, "verse.txt");
+//	fileOkay = openWritePC(fout, "bridge.txt");
+	// variables
+	long redVal = 0, greenVal = 0, blueVal = 0;
+	bool notEnd = true, colorFind = false;
+	//const int TOL = 5;
+	int colorRow = 0, prevColor = -1, strumCount = 0;
+	// while not three black blocks in a row
+	while(notEnd == true)
+	{
+		motor[motorA]=50;
+		nMotorEncoder[motorA]=0;
+		while(nMotorEncoder[motorA] < 97)
+		{}
+		motor[motorA]=0;
+		//get color read in
+		getColorRawRGB(S2,redVal, greenVal, blueVal);
+		//compare to test colours
+		colorFind = false;
+		// compare color reading to test color values
+		for(int compareRow = 1; compareRow < 6 && colorFind==false; compareRow++)
+		{
+			colorRow = compareRow;
+			if(fabs(redTest[compareRow] - redVal) <= TOL && fabs(greenTest[compareRow] - greenVal) <= TOL)
+				colorFind = true;
+			else if(fabs(redTest[compareRow] - redVal) <= TOL && fabs(blueTest[compareRow] - blueVal) <= TOL)
+				colorFind = true;
+			else if(fabs(greenTest[compareRow] - greenVal) <= TOL && fabs(blueTest[compareRow] - blueVal) <= TOL)
+				colorFind = true;
+		}
+		//if color is not the same as the last
+		if(colorRow != prevColor)
+		{
+			if(prevColor == -1)
+			{
+				writeFloatPC(fout, colorRow);
+				writeFloatPC(fout, strumCount+1);
+				writeEndlPC(fout);
+				prevColor = colorRow;
+				strumCount++;
+			}
+			else if(colorRow == 5)
+			{
+				notEnd = false;
+			}
+			else
+			{
+				prevColor = colorRow;
+				writeFloatPC(fout, prevColor);
+				//first color reading will four strumCount value of -1(disregarded when reading in music from file)
+				writeFloatPC(fout, strumCount);
+				writeEndlPC(fout);
+				// incase immediate change of note, guitar will still strum
+				strumCount = 1;
+			}
+		}
+		else
+		{
+			// if red - am
+			if(colorRow == 1)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if blue - f
+			if(colorRow == 2)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if green - g
+			if(colorRow == 3)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if yellow - c
+			if(colorRow == 4)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			else
+			{}
+		}
+	}
+	while(SensorValue[S3] ==0)
+	{}
+	while(SensorValue[S3]==1)
+	{}
+	motor[motorA]=50;
+	wait1Msec(2000);
+	motor[motorA]=0;
+	while(SensorValue[S3] ==0)
+	{}
+	while(SensorValue[S3]==1)
+	{}
+}
+void readChorus(float* redTest, float* greenTest, float* blueTest, const int TOL)
+{
+	// open file-robot.txt
+	TFileHandle fout;
+	bool fileOkay = openWritePC(fout, "chorus.txt");
+	// variables
+	long redVal = 0, greenVal = 0, blueVal = 0;
+	bool notEnd = true, colorFind = false;
+	//const int TOL = 5;
+	int colorRow = 0, prevColor = -1, strumCount = 0;
+	// while not three black blocks in a row
+	while(notEnd ==true)
+	{
+		motor[motorA]=50;
+		nMotorEncoder[motorA]=0;
+		while(nMotorEncoder[motorA] < 97)
+		{}
+		motor[motorA]=0;
+		//get color read in
+		getColorRawRGB(S2,redVal, greenVal, blueVal);
+		//compare to test colours
+		colorFind = false;
+		// compare color reading to test color values
+		for(int compareRow = 1; compareRow < 6 && colorFind==false; compareRow++)
+		{
+			colorRow = compareRow;
+			if(fabs(redTest[compareRow] - redVal) <= TOL && fabs(greenTest[compareRow] - greenVal) <= TOL)
+				colorFind = true;
+			if(fabs(redTest[compareRow] - redVal) <= TOL && fabs(blueTest[compareRow] - blueVal) <= TOL)
+				colorFind = true;
+			if(fabs(greenTest[compareRow] - greenVal) <= TOL && fabs(blueTest[compareRow] - blueVal) <= TOL)
+				colorFind = true;
+		}
+		//if color is not the same as the last
+		if(colorRow != prevColor)
+		{
+			if(prevColor == -1)
+			{
+				writeFloatPC(fout, colorRow);
+				writeFloatPC(fout, strumCount+1);
+				writeEndlPC(fout);
+				prevColor = colorRow;
+				strumCount++;
+			}
+			else if(colorRow == 5)
+			{
+				notEnd = false;
+			}
+			else
+			{
+				prevColor = colorRow;
+				writeFloatPC(fout, prevColor);
+				//first color reading will four strumCount value of -1(disregarded when reading in music from file)
+				writeFloatPC(fout, strumCount);
+				writeEndlPC(fout);
+				// incase immediate change of note, guitar will still strum
+				strumCount = 1;
+			}
+		}
+		else
+		{
+		// if red - am
+			if(colorRow == 1)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if blue - f
+			if(colorRow == 2)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if green - g
+			if(colorRow == 3)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if yellow - c
+			if(colorRow == 4)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if black - stop
+			if(colorRow == 5)
+				notEnd = false;
+			else
+			{}
+		}
+	}
+	while(SensorValue[S3] ==0)
+	{}
+	while(SensorValue[S3]==1)
+	{}
+	motor[motorA]=50;
+	wait1Msec(2000);
+	motor[motorA]=0;
+	while(SensorValue[S3] ==0)
+	{}
+	while(SensorValue[S3]==1)
+	{}
+}
+void readBridge(float* redTest, float* greenTest, float* blueTest, const int TOL)
+{
+	// open file-robot.txt
+	TFileHandle fout;
+	bool fileOkay = openWritePC(fout, "bridge.txt");
+	// variables
+	long redVal = 0, greenVal = 0, blueVal = 0;
+	bool notEnd = true, colorFind = false;
+//	const int TOL = 5;
+	int colorRow = 0, prevColor = -1, strumCount = 0, count = 0;
+	// while not three black blocks in a row
+	while(notEnd != false)
+	{
+		count++;
+		motor[motorA]=50;
+		nMotorEncoder[motorA]=0;
+		while(nMotorEncoder[motorA] < 97)
+		{}
+		motor[motorA]=0;
+		//get color read in
+		getColorRawRGB(S2,redVal, greenVal, blueVal);
+		//compare to test colours
+		colorFind = false;
+		// compare color reading to test color values
+		for(int compareRow = 1; compareRow < 6 && colorFind==false; compareRow++)
+		{
+			colorRow = compareRow;
+			if(fabs(redTest[compareRow] - redVal) <= TOL && fabs(greenTest[compareRow] - greenVal) <= TOL)
+				colorFind = true;
+			if(fabs(redTest[compareRow] - redVal) <= TOL && fabs(blueTest[compareRow] - blueVal) <= TOL)
+				colorFind = true;
+			if(fabs(greenTest[compareRow] - greenVal) <= TOL && fabs(blueTest[compareRow] - blueVal) <= TOL)
+				colorFind = true;
+		}
+		//if color is not the same as the last
+		if(colorRow != prevColor)
+		{
+			if(prevColor == -1)
+			{
+				writeFloatPC(fout, colorRow);
+				writeFloatPC(fout, strumCount+1);
+				writeEndlPC(fout);
+				prevColor = colorRow;
+				strumCount++;
+			}
+			else if(colorRow == 5)
+			{
+				notEnd = false;
+			}
+			else
+			{
+				prevColor = colorRow;
+				writeFloatPC(fout, prevColor);
+				//first color reading will four strumCount value of -1(disregarded when reading in music from file)
+				writeFloatPC(fout, strumCount);
+				writeEndlPC(fout);
+				// incase immediate change of note, guitar will still strum
+				strumCount = 1;
+			}
+		}
+		else
+		{
+			// if red - am
+			if(colorRow == 1)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if blue - f
+			if(colorRow == 2)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if green - g
+			if(colorRow == 3)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if yellow - c
+			if(colorRow == 4)
+			{
+				prevColor = colorRow;
+				strumCount++;
+			}
+			// if black - stop
+			if(colorRow == 5)
+				notEnd = false;
+			else
+			{}
+		}
+	}
+	while(SensorValue[S3] ==0)
+	{}
+	while(SensorValue[S3]==1)
+	{}
+	motor[motorA]=50;
+	wait1Msec(2000);
+	motor[motorA]=0;
+	while(SensorValue[S3] ==0)
+	{}
+	while(SensorValue[S3]==1)
+	{}
+}
+task main()
+{
+	SensorType[S2] = sensorEV3_Color;
+	wait1Msec(50);
+	SensorMode[S2] = modeEV3Color_RGB_Raw;
+	wait1Msec(50);
+	SensorType[S3] = sensorEV3_Touch;
+	const int TOL = 15;
+	float redTest[5], greenTest[5], blueTest[5];
+	musicRead(redTest, greenTest, blueTest);
+	readBridge(redTest, greenTest, blueTest, TOL);
+	readChorus(redTest, greenTest, blueTest, TOL);
+	readVerse(redTest, greenTest, blueTest, TOL);
+}
+//red first
+//blue
+//green
+//yellow
+//black
